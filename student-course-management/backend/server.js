@@ -5,6 +5,10 @@ require("dotenv").config();
 
 const app = express();
 
+// =========================
+// ENVIRONMENT
+// =========================
+
 const PORT = process.env.PORT || 5000;
 const MONGO_URI = process.env.MONGO_URI;
 
@@ -14,13 +18,27 @@ const MONGO_URI = process.env.MONGO_URI;
 
 const allowedOrigins = [
   "http://localhost:5173",
+  "http://localhost:3000",
   "https://eduvera-ovi6.vercel.app",
   "https://eduvera-chi.vercel.app"
 ];
 
 app.use(
   cors({
-    origin: allowedOrigins,
+    origin: function (origin, callback) {
+      // Allow requests without an origin
+      if (!origin) {
+        return callback(null, true);
+      }
+
+      // Allow registered frontend origins
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+
+      // Reject unknown origins
+      return callback(new Error("Not allowed by CORS"));
+    },
     credentials: true
   })
 );
@@ -31,6 +49,23 @@ app.use(
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// =========================
+// MONGODB CONNECTION
+// =========================
+
+if (!MONGO_URI) {
+  console.error("ERROR: MONGO_URI is not defined");
+} else {
+  mongoose
+    .connect(MONGO_URI)
+    .then(() => {
+      console.log("MongoDB connected successfully");
+    })
+    .catch((error) => {
+      console.error("MongoDB connection error:", error);
+    });
+}
 
 // =========================
 // ROUTES
@@ -45,24 +80,68 @@ app.use("/api/auth", authRoutes);
 // =========================
 
 app.get("/", (req, res) => {
-  res.json({
-    message: "Student Course Management API is running"
+  res.status(200).json({
+    success: true,
+    message: "Eduvera Backend API is running"
   });
 });
 
 // =========================
-// MONGODB CONNECTION
+// HEALTH CHECK
 // =========================
 
-mongoose
-  .connect(MONGO_URI)
-  .then(() => {
-    console.log("MongoDB connected successfully");
-
-    app.listen(PORT, () => {
-      console.log(`Server running on port ${PORT}`);
-    });
-  })
-  .catch((error) => {
-    console.error("MongoDB connection error:", error);
+app.get("/health", (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: "Backend is healthy",
+    mongodb:
+      mongoose.connection.readyState === 1
+        ? "connected"
+        : "disconnected"
   });
+});
+
+// =========================
+// 404 HANDLER
+// =========================
+
+app.use((req, res) => {
+  res.status(404).json({
+    success: false,
+    message: `Route not found: ${req.method} ${req.originalUrl}`
+  });
+});
+
+// =========================
+// ERROR HANDLER
+// =========================
+
+app.use((err, req, res, next) => {
+  console.error("Server error:", err);
+
+  res.status(500).json({
+    success: false,
+    message: err.message || "Internal Server Error"
+  });
+});
+
+// =========================
+// LOCAL SERVER
+// =========================
+
+// This runs only when you execute:
+// node server.js
+//
+// Vercel will use module.exports instead.
+
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+  });
+}
+
+// =========================
+// VERCEL EXPORT
+// =========================
+
+module.exports = app;
