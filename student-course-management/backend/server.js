@@ -31,12 +31,10 @@ app.use(
         return callback(null, true);
       }
 
-      // Allow registered frontend origins
       if (allowedOrigins.includes(origin)) {
         return callback(null, true);
       }
 
-      // Reject unknown origins
       return callback(new Error("Not allowed by CORS"));
     },
     credentials: true
@@ -54,18 +52,45 @@ app.use(express.urlencoded({ extended: true }));
 // MONGODB CONNECTION
 // =========================
 
-if (!MONGO_URI) {
-  console.error("ERROR: MONGO_URI is not defined");
-} else {
-  mongoose
-    .connect(MONGO_URI)
-    .then(() => {
-      console.log("MongoDB connected successfully");
-    })
-    .catch((error) => {
-      console.error("MongoDB connection error:", error);
-    });
+let isMongoConnected = false;
+
+async function connectMongoDB() {
+  if (isMongoConnected && mongoose.connection.readyState === 1) {
+    return;
+  }
+
+  if (!MONGO_URI) {
+    throw new Error("MONGO_URI is not defined");
+  }
+
+  if (mongoose.connection.readyState === 1) {
+    isMongoConnected = true;
+    return;
+  }
+
+  await mongoose.connect(MONGO_URI);
+  isMongoConnected = true;
+
+  console.log("MongoDB connected successfully");
 }
+
+// =========================
+// MONGODB MIDDLEWARE
+// =========================
+
+app.use(async (req, res, next) => {
+  try {
+    await connectMongoDB();
+    next();
+  } catch (error) {
+    console.error("MongoDB connection error:", error);
+
+    res.status(500).json({
+      success: false,
+      message: "Database connection failed"
+    });
+  }
+});
 
 // =========================
 // ROUTES
@@ -129,15 +154,16 @@ app.use((err, req, res, next) => {
 // LOCAL SERVER
 // =========================
 
-// This runs only when you execute:
-// node server.js
-//
-// Vercel will use module.exports instead.
-
 if (require.main === module) {
-  app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-  });
+  connectMongoDB()
+    .then(() => {
+      app.listen(PORT, () => {
+        console.log(`Server running on port ${PORT}`);
+      });
+    })
+    .catch((error) => {
+      console.error("Failed to start server:", error);
+    });
 }
 
 // =========================
