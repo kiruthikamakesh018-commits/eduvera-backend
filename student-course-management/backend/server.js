@@ -20,28 +20,30 @@ const allowedOrigins = [
   "http://localhost:5173",
   "http://localhost:3000",
   "https://eduvera-ovi6.vercel.app",
-  "https://eduvera-chi.vercel.app"
+  "https://eduvera-chi.vercel.app",
+  "https://frontend-mauve-two-97.vercel.app"
 ];
 
-app.use(
-  cors({
-    origin: function (origin, callback) {
-      // Allow requests without an origin
-      if (!origin) {
-        return callback(null, true);
-      }
+const corsOptions = {
+  origin: function (origin, callback) {
+    // Allow requests without an origin
+    if (!origin) {
+      return callback(null, true);
+    }
 
-      // Allow registered frontend origins
-      if (allowedOrigins.includes(origin)) {
-        return callback(null, true);
-      }
+    // Allow registered frontend origins
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
 
-      // Reject unknown origins
-      return callback(new Error("Not allowed by CORS"));
-    },
-    credentials: true
-  })
-);
+    return callback(new Error("Not allowed by CORS"));
+  },
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"]
+};
+
+app.use(cors(corsOptions));
 
 // =========================
 // MIDDLEWARE
@@ -128,11 +130,6 @@ app.use((err, req, res, next) => {
 // =========================
 // LOCAL SERVER
 // =========================
-
-// This runs only when you execute:
-// node server.js
-//
-// Vercel will use module.exports instead.
 
 if (require.main === module) {
   app.listen(PORT, () => {
