@@ -11,7 +11,6 @@ import AdminDashboard from "./components/AdminDashboard";
 
 import "./style.css";
 
-
 function App() {
   const [isLogin, setIsLogin] = useState(true);
   const [loggedIn, setLoggedIn] = useState(false);
@@ -29,20 +28,43 @@ function App() {
   const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
+  // =========================
+  // RESTORE LOGIN
+  // =========================
+
   useEffect(() => {
     const token = localStorage.getItem("token");
     const savedUser = localStorage.getItem("user");
 
     if (token && savedUser) {
       try {
-        setUser(JSON.parse(savedUser));
+        const parsedUser = JSON.parse(savedUser);
+
+        const normalizedUser = {
+          ...parsedUser,
+          role: String(parsedUser?.role || "").toLowerCase(),
+        };
+
+        setUser(normalizedUser);
         setLoggedIn(true);
-      } catch {
+
+        if (normalizedUser.role === "admin") {
+          setPage("admin");
+        } else {
+          setPage("home");
+        }
+      } catch (error) {
+        console.error("Restore login error:", error);
+
         localStorage.removeItem("token");
         localStorage.removeItem("user");
       }
     }
   }, []);
+
+  // =========================
+  // AUTH NAVIGATION
+  // =========================
 
   const goToAuth = (login = true) => {
     setIsLogin(login);
@@ -54,12 +76,20 @@ function App() {
     });
   };
 
+  // =========================
+  // INPUT CHANGE
+  // =========================
+
   const handleChange = (e) => {
     setFormData((prev) => ({
       ...prev,
       [e.target.name]: e.target.value,
     }));
   };
+
+  // =========================
+  // LOGIN / REGISTER
+  // =========================
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -95,40 +125,75 @@ function App() {
         body
       );
 
+      // =========================
+      // LOGIN SUCCESS
+      // =========================
+
       if (isLogin) {
         const loggedInUser = response.data.user;
 
-        localStorage.setItem("token", response.data.token);
+        if (!loggedInUser) {
+          alert("Login successful, but user information is missing.");
+          return;
+        }
+
+        const normalizedUser = {
+          ...loggedInUser,
+          role: String(
+            loggedInUser.role || "student"
+          ).toLowerCase(),
+        };
+
         localStorage.setItem(
-          "user",
-          JSON.stringify(loggedInUser)
+          "token",
+          response.data.token
         );
 
-        setUser(loggedInUser);
+        localStorage.setItem(
+          "user",
+          JSON.stringify(normalizedUser)
+        );
+
+        setUser(normalizedUser);
         setLoggedIn(true);
-        setPage("home");
+
+        // =========================
+        // ADMIN / STUDENT REDIRECT
+        // =========================
+
+        if (normalizedUser.role === "admin") {
+          setPage("admin");
+        } else {
+          setPage("home");
+        }
 
         setFormData({
           name: "",
           email: "",
           password: "",
         });
-      } else {
-        alert(
-          response.data.message ||
-            "Registration successful!"
-        );
 
-        setIsLogin(true);
-
-        setFormData({
-          name: "",
-          email: formData.email,
-          password: "",
-        });
+        return;
       }
+
+      // =========================
+      // REGISTER SUCCESS
+      // =========================
+
+      alert(
+        response.data.message ||
+          "Registration successful!"
+      );
+
+      setIsLogin(true);
+
+      setFormData({
+        name: "",
+        email: formData.email,
+        password: "",
+      });
     } catch (error) {
-      console.error(error);
+      console.error("Authentication Error:", error);
 
       alert(
         error.response?.data?.message ||
@@ -140,6 +205,10 @@ function App() {
     }
   };
 
+  // =========================
+  // LOGOUT
+  // =========================
+
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
@@ -148,7 +217,17 @@ function App() {
     setLoggedIn(false);
     setPage("home");
     setIsLogin(true);
+
+    setFormData({
+      name: "",
+      email: "",
+      password: "",
+    });
   };
+
+  // =========================
+  // FORGOT PASSWORD
+  // =========================
 
   if (!loggedIn && showForgotPassword) {
     return (
@@ -158,7 +237,14 @@ function App() {
     );
   }
 
-  if (loggedIn && user?.role === "admin") {
+  // =========================
+  // ADMIN DASHBOARD
+  // =========================
+
+  if (
+    loggedIn &&
+    String(user?.role || "").toLowerCase() === "admin"
+  ) {
     return (
       <AdminDashboard
         user={user}
@@ -167,16 +253,26 @@ function App() {
     );
   }
 
+  // =========================
+  // MY COURSES
+  // =========================
+
   if (loggedIn && page === "courses") {
     return (
       <MyCourses
         user={user}
         onBack={() => setPage("home")}
-        onAvailableCourses={() => setPage("available")}
+        onAvailableCourses={() =>
+          setPage("available")
+        }
         onProfile={() => setPage("profile")}
       />
     );
   }
+
+  // =========================
+  // AVAILABLE COURSES
+  // =========================
 
   if (loggedIn && page === "available") {
     return (
@@ -189,16 +285,26 @@ function App() {
     );
   }
 
+  // =========================
+  // PROFILE
+  // =========================
+
   if (loggedIn && page === "profile") {
     return (
       <MyProfile
         user={user}
         onBack={() => setPage("home")}
-        onAvailableCourses={() => setPage("available")}
+        onAvailableCourses={() =>
+          setPage("available")
+        }
         onMyCourses={() => setPage("courses")}
       />
     );
   }
+
+  // =========================
+  // STUDENT DASHBOARD
+  // =========================
 
   if (loggedIn) {
     return (
@@ -213,6 +319,10 @@ function App() {
       />
     );
   }
+
+  // =========================
+  // LANDING PAGE
+  // =========================
 
   return (
     <main className="edu-page">
@@ -238,7 +348,14 @@ function App() {
         </button>
 
         <nav className="nav-links">
-          <button onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}>
+          <button
+            onClick={() =>
+              window.scrollTo({
+                top: 0,
+                behavior: "smooth",
+              })
+            }
+          >
             Home
           </button>
 
@@ -271,11 +388,8 @@ function App() {
       {/* HERO */}
 
       <section className="hero">
-
         <div className="hero-content">
-
           <div className="hero-text">
-
             <div className="mini-label">
               ✦ SMARTER LEARNING STARTS HERE
             </div>
@@ -303,7 +417,6 @@ function App() {
             </div>
 
             <div className="hero-buttons">
-
               <button
                 className="primary-button"
                 onClick={() => goToAuth(false)}
@@ -323,7 +436,6 @@ function App() {
               >
                 Login to Eduvera
               </button>
-
             </div>
 
             <div className="trust-row">
@@ -342,13 +454,11 @@ function App() {
                 <span>Rating</span>
               </div>
             </div>
-
           </div>
 
           {/* HERO VISUAL */}
 
           <div className="hero-visual">
-
             <div className="visual-circle"></div>
 
             <div className="orbit orbit-one"></div>
@@ -356,7 +466,6 @@ function App() {
 
             <div className="laptop">
               <div className="laptop-screen">
-
                 <div className="screen-top">
                   <span>Eduvera</span>
                   <span>Dashboard</span>
@@ -382,7 +491,6 @@ function App() {
                   <div>Database</div>
                   <div>Python</div>
                 </div>
-
               </div>
 
               <div className="laptop-base"></div>
@@ -390,6 +498,7 @@ function App() {
 
             <div className="floating-card card-top">
               <span className="card-icon">✓</span>
+
               <div>
                 <strong>Course Complete</strong>
                 <small>Java Module</small>
@@ -398,6 +507,7 @@ function App() {
 
             <div className="floating-card card-bottom">
               <span className="card-icon">↗</span>
+
               <div>
                 <strong>Great Progress!</strong>
                 <small>Keep learning</small>
@@ -407,21 +517,15 @@ function App() {
             <div className="floating-dot dot-one"></div>
             <div className="floating-dot dot-two"></div>
             <div className="floating-dot dot-three"></div>
-
           </div>
-
         </div>
-
       </section>
 
-      {/* LOGIN */}
+      {/* AUTH */}
 
       <section className="auth-section">
-
         <div className="auth-card">
-
           <div className="auth-top">
-
             <div className="auth-logo">
               <div className="auth-logo-icon">
                 E
@@ -432,13 +536,10 @@ function App() {
                 <span>Learn Beyond Limits.</span>
               </div>
             </div>
-
           </div>
 
           <div className="auth-body">
-
             <div className="auth-heading">
-
               <span className="welcome-label">
                 {isLogin
                   ? "WELCOME BACK"
@@ -456,14 +557,12 @@ function App() {
                   ? "Sign in and continue your learning journey."
                   : "Register and start exploring Eduvera courses."}
               </p>
-
             </div>
 
             <form
               className="auth-form"
               onSubmit={handleSubmit}
             >
-
               {!isLogin && (
                 <div className="field">
                   <label>Full Name</label>
@@ -519,14 +618,47 @@ function App() {
                   <button
                     type="button"
                     className="eye-button"
-                    aria-label={showPassword ? "Hide password" : "Show password"}
-                    title={showPassword ? "Hide password" : "Show password"}
-                    onClick={() => setShowPassword((value) => !value)}
+                    aria-label={
+                      showPassword
+                        ? "Hide password"
+                        : "Show password"
+                    }
+                    title={
+                      showPassword
+                        ? "Hide password"
+                        : "Show password"
+                    }
+                    onClick={() =>
+                      setShowPassword(
+                        (value) => !value
+                      )
+                    }
                   >
                     {showPassword ? (
-                      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.2 12s3.5-6 9.8-6 9.8 6 9.8 6-3.5 6-9.8 6-9.8-6-9.8-6Z"/><circle cx="12" cy="12" r="2.7"/><path d="m4 4 16 16"/></svg>
+                      <svg
+                        viewBox="0 0 24 24"
+                        aria-hidden="true"
+                      >
+                        <path d="M2.2 12s3.5-6 9.8-6 9.8 6 9.8 6-3.5 6-9.8 6-9.8-6-9.8-6Z" />
+                        <circle
+                          cx="12"
+                          cy="12"
+                          r="2.7"
+                        />
+                        <path d="m4 4 16 16" />
+                      </svg>
                     ) : (
-                      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.2 12s3.5-6 9.8-6 9.8 6 9.8 6-3.5 6-9.8 6-9.8-6-9.8-6Z"/><circle cx="12" cy="12" r="2.7"/></svg>
+                      <svg
+                        viewBox="0 0 24 24"
+                        aria-hidden="true"
+                      >
+                        <path d="M2.2 12s3.5-6 9.8-6 9.8 6 9.8 6-3.5 6-9.8 6-9.8-6-9.8-6Z" />
+                        <circle
+                          cx="12"
+                          cy="12"
+                          r="2.7"
+                        />
+                      </svg>
                     )}
                   </button>
                 </div>
@@ -534,7 +666,6 @@ function App() {
 
               {isLogin && (
                 <div className="form-options">
-
                   <label className="remember">
                     <input type="checkbox" />
                     <span>Remember me</span>
@@ -549,7 +680,6 @@ function App() {
                   >
                     Forgot password?
                   </button>
-
                 </div>
               )}
 
@@ -566,11 +696,9 @@ function App() {
 
                 {!submitting && <span>→</span>}
               </button>
-
             </form>
 
             <div className="auth-switch">
-
               <span>
                 {isLogin
                   ? "Don't have an account?"
@@ -594,20 +722,15 @@ function App() {
                   ? "Create account"
                   : "Sign in"}
               </button>
-
             </div>
 
             <div className="secure">
               <span>🔒</span>
               Secure JWT authenticated access
             </div>
-
           </div>
-
         </div>
-
       </section>
-
     </main>
   );
 }
