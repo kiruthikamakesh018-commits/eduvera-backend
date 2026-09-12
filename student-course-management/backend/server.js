@@ -70,9 +70,15 @@ if (!MONGO_URI) {
 
 const authRoutes = require("./routes/authRoutes");
 const courseRoutes = require("./routes/courseRoutes");
+const enrollmentRoutes = require("./routes/enrollmentRoutes");
 
 app.use("/api/auth", authRoutes);
 app.use("/api/courses", courseRoutes);
+app.use("/api/enrollments", enrollmentRoutes);
+
+console.log("AUTH ROUTES REGISTERED");
+console.log("COURSE ROUTES REGISTERED");
+console.log("ENROLLMENT ROUTES REGISTERED");
 
 // =========================
 // HOME ROUTE
