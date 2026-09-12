@@ -2,7 +2,7 @@ import axios from "axios";
 
 const API_BASE =
   import.meta.env.VITE_API_URL ||
-  "https://eduvera-backend-q6vnwmn7i-kiki-projects1.vercel.app/api";
+  "https://eduvera-backend-t7ih.onrender.com/api";
 
 export default API_BASE;
 
