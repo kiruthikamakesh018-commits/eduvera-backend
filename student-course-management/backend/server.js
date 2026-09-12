@@ -21,7 +21,8 @@ const allowedOrigins = [
   "http://localhost:3000",
   "https://eduvera-ovi6.vercel.app",
   "https://eduvera-chi.vercel.app",
-  "https://frontend-mauve-two-97.vercel.app"
+  "https://frontend-mauve-two-97.vercel.app",
+  "https://frontend-h6df4dlhv-kiki-projects1.vercel.app"
 ];
 
 const corsOptions = {
@@ -68,8 +69,10 @@ if (!MONGO_URI) {
 // =========================
 
 const authRoutes = require("./routes/authRoutes");
+const courseRoutes = require("./routes/courseRoutes");
 
 app.use("/api/auth", authRoutes);
+app.use("/api/courses", courseRoutes);
 
 // =========================
 // HOME ROUTE
