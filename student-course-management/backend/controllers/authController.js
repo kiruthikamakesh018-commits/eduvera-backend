@@ -5,18 +5,17 @@ const jwt = require("jsonwebtoken");
 // =========================
 // REGISTER
 // =========================
+
 const register = async (req, res) => {
   try {
     const { name, email, password, role } = req.body;
 
-    // Check required fields
     if (!name || !email || !password) {
       return res.status(400).json({
         message: "Name, email and password are required",
       });
     }
 
-    // Check existing user
     const existingUser = await User.findOne({ email });
 
     if (existingUser) {
@@ -25,10 +24,8 @@ const register = async (req, res) => {
       });
     }
 
-    // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Create user
     const user = await User.create({
       name,
       email,
@@ -58,18 +55,17 @@ const register = async (req, res) => {
 // =========================
 // LOGIN
 // =========================
+
 const login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // Check required fields
     if (!email || !password) {
       return res.status(400).json({
         message: "Email and password are required",
       });
     }
 
-    // Find user
     const user = await User.findOne({ email });
 
     if (!user) {
@@ -78,7 +74,6 @@ const login = async (req, res) => {
       });
     }
 
-    // Compare password
     const isMatch = await bcrypt.compare(password, user.password);
 
     if (!isMatch) {
@@ -87,7 +82,6 @@ const login = async (req, res) => {
       });
     }
 
-    // Create JWT token
     const token = jwt.sign(
       {
         id: user._id,
@@ -99,7 +93,6 @@ const login = async (req, res) => {
       }
     );
 
-    // Send response
     res.status(200).json({
       message: "Login successful",
       token,
@@ -123,6 +116,7 @@ const login = async (req, res) => {
 // =========================
 // UPDATE PROFILE
 // =========================
+
 const updateProfile = async (req, res) => {
   try {
     const { id, name, email } = req.body;
@@ -170,8 +164,82 @@ const updateProfile = async (req, res) => {
   }
 };
 
+// =========================
+// UPDATE ADMIN CREDENTIALS
+// =========================
+
+const updateAdminCredentials = async (req, res) => {
+  try {
+    const {
+      oldEmail,
+      newEmail,
+      newPassword
+    } = req.body;
+
+    if (!oldEmail || !newEmail || !newPassword) {
+      return res.status(400).json({
+        message:
+          "Old email, new email and new password are required",
+      });
+    }
+
+    const admin = await User.findOne({
+      email: oldEmail,
+      role: "admin",
+    });
+
+    if (!admin) {
+      return res.status(404).json({
+        message: "Admin account not found",
+      });
+    }
+
+    const existingUser = await User.findOne({
+      email: newEmail,
+      _id: { $ne: admin._id },
+    });
+
+    if (existingUser) {
+      return res.status(400).json({
+        message: "New email is already in use",
+      });
+    }
+
+    const hashedPassword = await bcrypt.hash(
+      newPassword,
+      10
+    );
+
+    admin.email = newEmail;
+    admin.password = hashedPassword;
+
+    await admin.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Admin credentials updated successfully",
+    });
+  } catch (error) {
+    console.error(
+      "Update Admin Credentials Error:",
+      error
+    );
+
+    res.status(500).json({
+      success: false,
+      message: "Server error",
+      error: error.message,
+    });
+  }
+};
+
+// =========================
+// EXPORTS
+// =========================
+
 module.exports = {
   register,
   login,
   updateProfile,
+  updateAdminCredentials,
 };
