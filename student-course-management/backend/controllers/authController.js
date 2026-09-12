@@ -12,14 +12,20 @@ const register = async (req, res) => {
 
     if (!name || !email || !password) {
       return res.status(400).json({
+        success: false,
         message: "Name, email and password are required",
       });
     }
 
-    const existingUser = await User.findOne({ email });
+    const normalizedEmail = email.trim().toLowerCase();
+
+    const existingUser = await User.findOne({
+      email: normalizedEmail,
+    });
 
     if (existingUser) {
       return res.status(400).json({
+        success: false,
         message: "User already exists",
       });
     }
@@ -27,13 +33,14 @@ const register = async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const user = await User.create({
-      name,
-      email,
+      name: name.trim(),
+      email: normalizedEmail,
       password: hashedPassword,
-      role: role || "student",
+      role: role === "admin" ? "admin" : "student",
     });
 
-    res.status(201).json({
+    return res.status(201).json({
+      success: true,
       message: "Registration successful",
       user: {
         id: user._id,
@@ -45,7 +52,8 @@ const register = async (req, res) => {
   } catch (error) {
     console.error("Register Error:", error);
 
-    res.status(500).json({
+    return res.status(500).json({
+      success: false,
       message: "Server error",
       error: error.message,
     });
@@ -62,23 +70,48 @@ const login = async (req, res) => {
 
     if (!email || !password) {
       return res.status(400).json({
+        success: false,
         message: "Email and password are required",
       });
     }
 
-    const user = await User.findOne({ email });
+    const normalizedEmail = email.trim().toLowerCase();
+
+    const user = await User.findOne({
+      email: normalizedEmail,
+    });
+
+    // Temporary debugging
+    console.log("LOGIN USER:", {
+      email: user?.email,
+      role: user?.role,
+    });
 
     if (!user) {
       return res.status(400).json({
+        success: false,
         message: "Invalid email or password",
       });
     }
 
-    const isMatch = await bcrypt.compare(password, user.password);
+    const isMatch = await bcrypt.compare(
+      password,
+      user.password
+    );
 
     if (!isMatch) {
       return res.status(400).json({
+        success: false,
         message: "Invalid email or password",
+      });
+    }
+
+    if (!process.env.JWT_SECRET) {
+      console.error("JWT_SECRET is missing");
+
+      return res.status(500).json({
+        success: false,
+        message: "JWT_SECRET is not configured",
       });
     }
 
@@ -93,7 +126,8 @@ const login = async (req, res) => {
       }
     );
 
-    res.status(200).json({
+    return res.status(200).json({
+      success: true,
       message: "Login successful",
       token,
       user: {
@@ -106,7 +140,8 @@ const login = async (req, res) => {
   } catch (error) {
     console.error("Login Error:", error);
 
-    res.status(500).json({
+    return res.status(500).json({
+      success: false,
       message: "Server error",
       error: error.message,
     });
@@ -123,6 +158,7 @@ const updateProfile = async (req, res) => {
 
     if (!id) {
       return res.status(400).json({
+        success: false,
         message: "User ID is required",
       });
     }
@@ -131,21 +167,37 @@ const updateProfile = async (req, res) => {
 
     if (!user) {
       return res.status(404).json({
+        success: false,
         message: "User not found",
       });
     }
 
-    if (name) {
-      user.name = name;
+    if (name && name.trim()) {
+      user.name = name.trim();
     }
 
-    if (email) {
-      user.email = email;
+    if (email && email.trim()) {
+      const normalizedEmail = email.trim().toLowerCase();
+
+      const existingUser = await User.findOne({
+        email: normalizedEmail,
+        _id: { $ne: user._id },
+      });
+
+      if (existingUser) {
+        return res.status(400).json({
+          success: false,
+          message: "Email is already in use",
+        });
+      }
+
+      user.email = normalizedEmail;
     }
 
     await user.save();
 
-    res.status(200).json({
+    return res.status(200).json({
+      success: true,
       message: "Profile updated successfully",
       user: {
         id: user._id,
@@ -157,7 +209,8 @@ const updateProfile = async (req, res) => {
   } catch (error) {
     console.error("Update Profile Error:", error);
 
-    res.status(500).json({
+    return res.status(500).json({
+      success: false,
       message: "Server error",
       error: error.message,
     });
@@ -173,34 +226,40 @@ const updateAdminCredentials = async (req, res) => {
     const {
       oldEmail,
       newEmail,
-      newPassword
+      newPassword,
     } = req.body;
 
     if (!oldEmail || !newEmail || !newPassword) {
       return res.status(400).json({
+        success: false,
         message:
           "Old email, new email and new password are required",
       });
     }
 
     const admin = await User.findOne({
-      email: oldEmail,
+      email: oldEmail.trim().toLowerCase(),
       role: "admin",
     });
 
     if (!admin) {
       return res.status(404).json({
+        success: false,
         message: "Admin account not found",
       });
     }
 
+    const normalizedNewEmail =
+      newEmail.trim().toLowerCase();
+
     const existingUser = await User.findOne({
-      email: newEmail,
+      email: normalizedNewEmail,
       _id: { $ne: admin._id },
     });
 
     if (existingUser) {
       return res.status(400).json({
+        success: false,
         message: "New email is already in use",
       });
     }
@@ -210,14 +269,21 @@ const updateAdminCredentials = async (req, res) => {
       10
     );
 
-    admin.email = newEmail;
+    admin.email = normalizedNewEmail;
     admin.password = hashedPassword;
+    admin.role = "admin";
 
     await admin.save();
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       message: "Admin credentials updated successfully",
+      user: {
+        id: admin._id,
+        name: admin.name,
+        email: admin.email,
+        role: admin.role,
+      },
     });
   } catch (error) {
     console.error(
@@ -225,7 +291,7 @@ const updateAdminCredentials = async (req, res) => {
       error
     );
 
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: "Server error",
       error: error.message,
