@@ -1,3 +1,4 @@
+import { MenuIcon } from "./UIIcons";
 import { useEffect, useMemo, useState } from "react";
 import axios from "axios";
 import API from "../api";
@@ -121,8 +122,8 @@ function AdminDashboard({ user, onLogout }) {
     return (
       <div className="app-shell">
         <aside className="sidebar admin-side">
-          <div className="side-brand"><div className="brand-mark">SC</div><span>Student<span>Hub</span></span></div>
-          <nav className="side-nav"><button className="nav-item active"><span>♟</span> Registered Students</button><button className="nav-item" onClick={() => setShowStudents(false)}><span>▣</span> Course Management</button></nav>
+          <div className="side-brand"><div className="brand-mark">E</div><span>Eduvera<span></span></span></div>
+          <nav className="side-nav"><button className="nav-item active"><span>♟</span> Registered Students</button><button className="nav-item" onClick={() => setShowStudents(false)}><span><MenuIcon type="courses" /></span> Course Management</button></nav>
           <div className="side-bottom"><button className="logout-btn" onClick={onLogout}>↪ Logout</button></div>
         </aside>
         <main className="main-content">
@@ -151,10 +152,10 @@ function AdminDashboard({ user, onLogout }) {
   return (
     <div className="app-shell">
       <aside className="sidebar admin-side">
-        <div className="side-brand"><div className="brand-mark">SC</div><span>Student<span>Hub</span></span></div>
+        <div className="side-brand"><div className="brand-mark">E</div><span>Eduvera<span></span></span></div>
         <div className="admin-label">ADMIN PANEL</div>
         <nav className="side-nav">
-          <button className="nav-item active"><span>⌂</span> Dashboard</button>
+          <button className="nav-item active"><span><MenuIcon type="dashboard" /></span> Dashboard</button>
           <button className="nav-item" onClick={() => setShowStudents(true)}><span>♟</span> Registered Students</button>
           <button className="nav-item" onClick={() => { setEditingCourse(null); resetForm(); setShowAddForm(true); }}><span>＋</span> Add Course</button>
         </nav>
@@ -163,7 +164,7 @@ function AdminDashboard({ user, onLogout }) {
 
       <main className="main-content">
         <header className="topbar">
-          <div className="mobile-title">AdminHub</div>
+          <div className="mobile-title">Eduvera</div>
           <div className="topbar-right"><button className="icon-btn">♧</button><div className="avatar">{(user?.name || "A").charAt(0).toUpperCase()}</div><div className="user-mini"><b>{user?.name || "Admin"}</b><span>Administrator</span></div></div>
         </header>
 
@@ -202,7 +203,7 @@ function AdminDashboard({ user, onLogout }) {
            <div className="admin-course-list">
              {filteredCourses.map((course, index) => (
                <article className="admin-course-row" key={course._id}>
-                 <div className={`mini-cover cover-${index % 4}`}><span>SC</span></div>
+                 <div className={`mini-cover cover-${index % 4}`}><span>E</span></div>
                  <div className="admin-course-info"><span className="course-tag">COURSE</span><h3>{course.title}</h3><p>{course.description}</p><div className="course-info"><span>👨‍🏫 {course.instructor}</span><span>◷ {course.duration}</span></div></div>
                  <div className="row-actions"><button className="edit-btn" onClick={() => handleEdit(course)}>✎ Edit</button><button className="delete-btn" onClick={() => handleDelete(course._id)}>⌫ Delete</button></div>
                </article>

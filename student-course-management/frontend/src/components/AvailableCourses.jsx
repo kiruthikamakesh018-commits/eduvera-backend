@@ -2,10 +2,10 @@ import { useEffect, useMemo, useState } from "react";
 import axios from "axios";
 import API from "../api";
 import MobileNav from "./MobileNav";
-
+import { CourseLogo, MenuIcon } from "./UIIcons";
 function AvailableCourses({ user, onBack, onMyCourses, onProfile }) {
   const [courses, setCourses] = useState([]);
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState(() => new URLSearchParams(window.location.search).get("search") || "");
   const [loading, setLoading] = useState(true);
   const [selectedCourse, setSelectedCourse] = useState(null);
   const [enrolling, setEnrolling] = useState(false);
@@ -30,7 +30,7 @@ function AvailableCourses({ user, onBack, onMyCourses, onProfile }) {
     if (!text) return courses;
     return courses.filter((course) =>
       [course.title, course.description, course.instructor, course.duration]
-        .some((value) => value?.toLowerCase().includes(text))
+        .some((value) => String(value ?? '').toLowerCase().includes(text))
     );
   }, [courses, search]);
 
@@ -61,17 +61,17 @@ function AvailableCourses({ user, onBack, onMyCourses, onProfile }) {
     return (
       <div className="app-shell">
         <aside className="sidebar">
-          <div className="side-brand"><div className="brand-mark">SC</div><span>Student<span>Hub</span></span></div>
+          <div className="side-brand"><div className="brand-mark">E</div><span>Eduvera<span></span></span></div>
           <nav className="side-nav">
-            <button className="nav-item" onClick={onBack}><span>←</span> Dashboard</button>
-            <button className="nav-item active"><span>▣</span> Course Details</button>
+            <button className="nav-item" onClick={onBack}><span><MenuIcon type="dashboard" /></span> Dashboard</button>
+            <button className="nav-item active"><span><MenuIcon type="courses" /></span> Course Details</button>
           </nav>
         </aside>
         <main className="main-content">
           <header className="topbar"><button className="back-link" onClick={() => setSelectedCourse(null)}>← Back to courses</button></header>
           <section className="content-inner narrow">
             <div className="detail-hero">
-              <div className="course-cover large">▣</div>
+              <div className="course-cover large"><CourseLogo title={selectedCourse.title} /><em>COURSE DETAILS</em></div>
               <span className="course-tag">COURSE DETAILS</span>
               <h1>{selectedCourse.title}</h1>
               <p>{selectedCourse.description}</p>
@@ -93,12 +93,12 @@ function AvailableCourses({ user, onBack, onMyCourses, onProfile }) {
   return (
     <div className="app-shell">
       <aside className="sidebar">
-        <div className="side-brand"><div className="brand-mark">SC</div><span>Student<span>Hub</span></span></div>
+        <div className="side-brand"><div className="brand-mark">E</div><span>Eduvera<span></span></span></div>
         <nav className="side-nav">
-          <button className="nav-item" onClick={onBack}><span>⌂</span> Dashboard</button>
-          <button className="nav-item active"><span>▣</span> Available Courses</button>
-          <button className="nav-item" onClick={onMyCourses}><span>▤</span> My Courses</button>
-          <button className="nav-item" onClick={onProfile}><span>◉</span> My Profile</button>
+          <button className="nav-item" onClick={onBack}><span><MenuIcon type="dashboard" /></span> Dashboard</button>
+          <button className="nav-item active"><span><MenuIcon type="courses" /></span> Available Courses</button>
+          <button className="nav-item" onClick={onMyCourses}><span><MenuIcon type="learning" /></span> My Courses</button>
+          <button className="nav-item" onClick={onProfile}><span><MenuIcon type="profile" /></span> My Profile</button>
         </nav>
       </aside>
       <main className="main-content">
@@ -118,7 +118,7 @@ function AvailableCourses({ user, onBack, onMyCourses, onProfile }) {
            <div className="course-grid">
              {filteredCourses.map((course, index) => (
                <article className="course-card" key={course._id}>
-                 <div className={`course-cover cover-${index % 4}`}><span>SC</span><em>COURSE</em></div>
+                 <div className={`course-cover cover-${index % 4}`}><CourseLogo title={course.title} /><em>COURSE</em><div className="cover-sparkle">✦</div></div>
                  <div className="course-body">
                    <span className="course-tag">LEARNING</span>
                    <h2>{course.title}</h2>

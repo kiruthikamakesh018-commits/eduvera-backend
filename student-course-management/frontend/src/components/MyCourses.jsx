@@ -1,3 +1,4 @@
+import { MenuIcon } from "./UIIcons";
 import { useEffect, useState } from "react";
 import axios from "axios";
 import API from "../api";
@@ -37,11 +38,11 @@ function MyCourses({ user, onBack, onAvailableCourses, onProfile }) {
   return (
     <div className="app-shell">
       <aside className="sidebar">
-        <div className="side-brand"><div className="brand-mark">SC</div><span>Student<span>Hub</span></span></div>
+        <div className="side-brand"><div className="brand-mark">E</div><span>Eduvera<span></span></span></div>
         <nav className="side-nav">
-          <button className="nav-item" onClick={onBack}><span>⌂</span> Dashboard</button>
-          <button className="nav-item active"><span>▤</span> My Courses</button>
-          <button className="nav-item" onClick={onProfile}><span>◉</span> My Profile</button>
+          <button className="nav-item" onClick={onBack}><span><MenuIcon type="dashboard" /></span> Dashboard</button>
+          <button className="nav-item active"><span><MenuIcon type="learning" /></span> My Courses</button>
+          <button className="nav-item" onClick={onProfile}><span><MenuIcon type="profile" /></span> My Profile</button>
           <button className="nav-item"><span>✓</span> Completed</button>
         </nav>
         <div className="side-bottom"><button className="logout-btn" onClick={onBack}>← Back to Dashboard</button></div>

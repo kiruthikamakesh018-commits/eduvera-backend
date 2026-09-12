@@ -1,11 +1,14 @@
 import React from "react";
 
+
+import { MenuIcon } from "./UIIcons";
 function Dashboard({
   user,
   onLogout,
   onCourses,
   onAvailableCourses,
   onProfile,
+  onSearchCourses,
 }) {
   const firstName = user?.name?.split(" ")[0] || "Student";
 
@@ -35,7 +38,7 @@ function Dashboard({
         <nav className="dashboard-nav">
 
           <button className="dashboard-nav-item active">
-            <span className="nav-icon">⌂</span>
+            <span className="nav-icon"><MenuIcon type="dashboard" /></span>
             <span>Dashboard</span>
           </button>
 
@@ -43,7 +46,7 @@ function Dashboard({
             className="dashboard-nav-item"
             onClick={onAvailableCourses}
           >
-            <span className="nav-icon">▣</span>
+            <span className="nav-icon"><MenuIcon type="courses" /></span>
             <span>Available Courses</span>
           </button>
 
@@ -51,7 +54,7 @@ function Dashboard({
             className="dashboard-nav-item"
             onClick={onCourses}
           >
-            <span className="nav-icon">▤</span>
+            <span className="nav-icon"><MenuIcon type="learning" /></span>
             <span>My Courses</span>
           </button>
 
@@ -59,7 +62,7 @@ function Dashboard({
             className="dashboard-nav-item"
             onClick={onProfile}
           >
-            <span className="nav-icon">◉</span>
+            <span className="nav-icon"><MenuIcon type="profile" /></span>
             <span>My Profile</span>
           </button>
 
@@ -116,8 +119,15 @@ function Dashboard({
             <span>⌕</span>
 
             <input
-              type="text"
+              type="search"
               placeholder="Search courses..."
+              aria-label="Search courses"
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  const value = e.currentTarget.value.trim();
+                  onSearchCourses?.(value);
+                }
+              }}
             />
 
             <kbd>⌘ K</kbd>
@@ -187,13 +197,24 @@ function Dashboard({
 
             </div>
 
-            <button
-              className="explore-button"
-              onClick={onAvailableCourses}
-            >
-              <span>Explore Courses</span>
-              <b>→</b>
-            </button>
+            <div className="welcome-actions">
+              <div className="today-card">
+                <div className="today-icon"><MenuIcon type="learning" size={17} /></div>
+                <div>
+                  <span>LEARNING PULSE</span>
+                  <strong>Keep your momentum</strong>
+                  <small>One course today can move you forward.</small>
+                </div>
+                <div className="pulse-dot" aria-hidden="true"></div>
+              </div>
+              <button
+                className="explore-button"
+                onClick={onAvailableCourses}
+              >
+                <span>Explore Courses</span>
+                <b>→</b>
+              </button>
+            </div>
 
           </div>
 
@@ -205,7 +226,7 @@ function Dashboard({
               onClick={onAvailableCourses}
             >
               <div className="stat-icon-wrap blue-icon">
-                <span>▣</span>
+                <span><MenuIcon type="courses" size={19} /></span>
               </div>
 
               <div className="stat-details">
@@ -226,7 +247,7 @@ function Dashboard({
               onClick={onCourses}
             >
               <div className="stat-icon-wrap green-icon">
-                <span>✓</span>
+                <span><MenuIcon type="learning" size={19} /></span>
               </div>
 
               <div className="stat-details">
@@ -247,7 +268,7 @@ function Dashboard({
               onClick={onProfile}
             >
               <div className="stat-icon-wrap purple-icon">
-                <span>◉</span>
+                <span><MenuIcon type="profile" size={19} /></span>
               </div>
 
               <div className="stat-details">

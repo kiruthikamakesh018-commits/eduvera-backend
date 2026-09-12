@@ -19,7 +19,7 @@ function ForgotPassword({ onBack }) {
         <div className="auth-form-wrap">
           <div className="mobile-brand">
             <div className="brand-mark small">SC</div>
-            <span className="brand-name">Student<span>Hub</span></span>
+            <span className="brand-name">Eduvera<span></span></span>
           </div>
           <button className="back-link auth-back" onClick={onBack}>← Back to Login</button>
           <div className="auth-heading">
